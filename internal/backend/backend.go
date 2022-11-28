@@ -309,6 +309,14 @@ func (o *Operation) Config() (*configs.Config, tfdiags.Diagnostics) {
 	diags = diags.Append(hclDiags)
 	return config, diags
 }
+func InitNeeded(diags tfdiags.Diagnostics) bool {
+	for _, diag := range diags {
+		if diag.Description().Summary == "Module not installed" {
+			return true
+		}
+	}
+	return false
+}
 
 // ReportResult is a helper for the common chore of setting the status of
 // a running operation and showing any diagnostics produced during that
@@ -325,7 +333,11 @@ func (o *Operation) Config() (*configs.Config, tfdiags.Diagnostics) {
 // common and can be expressed concisely via this method.
 func (o *Operation) ReportResult(op *RunningOperation, diags tfdiags.Diagnostics) {
 	if diags.HasErrors() {
-		op.Result = OperationFailure
+		if InitNeeded(diags) {
+			op.Result = OperationInitNeeded
+		} else {
+			op.Result = OperationFailure
+		}
 	} else {
 		op.Result = OperationSuccess
 	}
@@ -387,6 +399,8 @@ const (
 	// of error, and thus may have been only partially performed or not
 	// performed at all.
 	OperationFailure OperationResult = 1
+
+	OperationInitNeeded OperationResult = 100
 )
 
 func (r OperationResult) ExitStatus() int {
