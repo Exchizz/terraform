@@ -135,16 +135,6 @@ func MakeTemplateFileFunc(baseDir string, funcsCb func() map[string]function.Fun
 		givenFuncs := funcsCb() // this callback indirection is to avoid chicken/egg problems
 		funcs := make(map[string]function.Function, len(givenFuncs))
 		for name, fn := range givenFuncs {
-			if name == "templatefile" {
-				// We stub this one out to prevent recursive calls.
-				funcs[name] = function.New(&function.Spec{
-					Params: params,
-					Type: func(args []cty.Value) (cty.Type, error) {
-						return cty.NilType, fmt.Errorf("cannot recursively call templatefile from inside templatefile call")
-					},
-				})
-				continue
-			}
 			funcs[name] = fn
 		}
 		ctx.Functions = funcs
